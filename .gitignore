@@ -9,3 +9,6 @@ apps/employee/ios/
 .DS_Store
 .env
 .env.local
+
+.vercel
+.env*

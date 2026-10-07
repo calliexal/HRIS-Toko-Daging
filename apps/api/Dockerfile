@@ -31,6 +31,6 @@ RUN rm -f apps/api/.env apps/api/.env.* && chown -R node:node /app
 USER node
 WORKDIR /app/apps/api
 EXPOSE 4000
-# Migrasi dijalankan terpisah sebagai release/pre-deploy command:
-#   node --import tsx src/db/migrate.ts
-CMD ["node", "--import", "tsx", "src/main.ts"]
+# Migrasi dijalankan setiap start sebelum API menyala (aman diulang, dikunci advisory lock), jadi tidak perlu
+# pre-deploy command khusus platform. API tidak akan start bila migrasi gagal.
+CMD ["sh", "-c", "node --import tsx src/db/migrate.ts && exec node --import tsx src/main.ts"]
