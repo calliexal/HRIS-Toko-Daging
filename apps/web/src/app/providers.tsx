@@ -22,13 +22,32 @@ const NextAppLink = ({ href, children, ...rest }: AppLinkProps) =>
  * Sesi di sessionStorage: hilang saat tab ditutup dan tidak terbagi antar-tab (komputer kasir/kantor dipakai bergantian).
  * NEXT_PUBLIC_API_URL diisi → klien HTTP ke API; kosong → data contoh (mock) dengan akun demo.
  */
+/**
+ * Khusus demo: token perangkat kiosk dari NEXT_PUBLIC_DEMO_KIOSK_TOKENS (JSON {"kiosk-id": "token"}).
+ * Variabel NEXT_PUBLIC_* ikut terkirim ke peramban, jadi JANGAN diisi token kiosk produksi; tablet kiosk sungguhan
+ * menyimpan tokennya lewat layar setup kiosk (lihat README, pekerjaan lanjutan).
+ */
+const demoKioskTokens = (): Record<string, string> => {
+  try {
+    const parsed: unknown = JSON.parse(process.env.NEXT_PUBLIC_DEMO_KIOSK_TOKENS ?? '{}');
+    return parsed && typeof parsed === 'object' ? Object.fromEntries(Object.entries(parsed).filter((e): e is [string, string] => typeof e[1] === 'string')) : {};
+  } catch {
+    return {};
+  }
+};
+
 const createClients = () => {
   const session = createSessionStore({
     persistence: webStoragePersistence(typeof window === 'undefined' ? undefined : window.sessionStorage, 'dp.admin.session'),
   });
   const apiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
   const client: HrisClient = apiUrl
-    ? createHttpClient({ baseUrl: apiUrl, getToken: () => session.token(), onUnauthenticated: () => session.end('unauthenticated') })
+    ? createHttpClient({
+        baseUrl: apiUrl,
+        getToken: () => session.token(),
+        onUnauthenticated: () => session.end('unauthenticated'),
+        kioskToken: (kioskId) => demoKioskTokens()[kioskId],
+      })
     : createMockClient();
   return { session, client };
 };

@@ -143,7 +143,20 @@ export const AttendanceTodayScreen = () => {
     }
   };
 
-  const locationOptions = (vm.locations.data ?? [{ id: vm.locationId, name: 'Outlet Kemang' }]).map((l) => ({ value: l.id, label: l.name }));
+  const locationOptions = (vm.locations.data ?? []).map((l) => ({ value: l.id, label: l.name }));
+
+  if (vm.noLocations) {
+    return (
+      <div className="adm-page">
+        <PageHeader title="Kehadiran hari ini" />
+        <Card>
+          <EmptyState icon="calendar" title="Belum ada lokasi kerja">
+            Kehadiran tampil setelah outlet, gudang, atau kantor didaftarkan. Minta admin sistem menambahkan lokasi beserta jadwal shift-nya.
+          </EmptyState>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="adm-page">
@@ -164,7 +177,7 @@ export const AttendanceTodayScreen = () => {
               label="Lokasi"
               hideLabel
               className="adm-location-select"
-              value={vm.locationId}
+              value={vm.locationId ?? ''}
               onChange={(e) => vm.changeLocation(e.target.value)}
               options={locationOptions}
             />

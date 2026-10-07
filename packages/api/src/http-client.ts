@@ -24,8 +24,11 @@ export type HttpClientOptions = {
   baseUrl: string;
   /** JWT pengguna yang sedang login (aplikasi karyawan & web admin). */
   getToken?: () => string | null;
-  /** Token perangkat kiosk (hanya di tablet kiosk). */
-  kioskToken?: string;
+  /**
+   * Token perangkat kiosk (hanya di tablet kiosk). Bisa berupa fungsi per kioskId untuk satu klien yang
+   * melayani beberapa kiosk (mis. demo yang menampilkan kiosk outlet dan gudang sekaligus).
+   */
+  kioskToken?: string | ((kioskId: string) => string | null | undefined);
   /** Id kiosk tablet ini (mis. 'kiosk-kemang-1'). */
   kioskId?: string;
   /** Dipanggil saat server menjawab 401 (mis. arahkan ke halaman login). */
@@ -69,7 +72,10 @@ export const createHttpClient = (options: HttpClientOptions): HttpHrisClient => 
       const token = options.getToken?.();
       if (token) headers.Authorization = `Bearer ${token}`;
     }
-    if (r.auth === 'kiosk' && options.kioskToken) headers['X-Kiosk-Token'] = options.kioskToken;
+    if (r.auth === 'kiosk') {
+      const kioskToken = typeof options.kioskToken === 'function' ? options.kioskToken(init.params?.kioskId ?? '') : options.kioskToken;
+      if (kioskToken) headers['X-Kiosk-Token'] = kioskToken;
+    }
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 15_000);

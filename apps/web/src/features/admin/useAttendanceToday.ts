@@ -8,7 +8,9 @@ import {
   formatDateShort,
   useApi,
   useResource,
+  type Anomaly,
   type AttendanceRecord,
+  type AttendanceSummary,
 } from '@dagingpeople/api';
 
 export type AttendanceFilter = 'all' | 'scheduled' | 'on_time' | 'late' | 'not_yet' | 'leave';
@@ -26,17 +28,23 @@ const matchesFilter = (record: AttendanceRecord, filter: AttendanceFilter): bool
   }
 };
 
+/** Belum ada lokasi terpilih: biarkan resource tetap "memuat" alih-alih memanggil API dengan id kosong. */
+const idle = <T,>() => new Promise<T>(() => undefined);
+
 /** Data layar Kehadiran hari ini: ringkasan, tabel, anomali, filter, pencarian, dan ekspor CSV. */
 export const useAttendanceToday = () => {
   const api = useApi();
-  const [locationId, setLocationId] = useState('kemang');
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
   const [filter, setFilter] = useState<AttendanceFilter>('all');
   const [query, setQuery] = useState('');
 
   const locations = useResource(() => api.admin.listLocations(), [api]);
-  const summary = useResource(() => api.admin.getAttendanceSummary(locationId), [api, locationId]);
-  const records = useResource(() => api.admin.getAttendanceRecords(locationId), [api, locationId]);
-  const anomalies = useResource(() => api.admin.getAnomalies(locationId), [api, locationId]);
+  // Default = lokasi pertama yang boleh dilihat akun ini (Kepala Toko hanya punya lokasinya sendiri).
+  const locationId = selectedLocationId ?? locations.data?.[0]?.id ?? null;
+  const noLocations = locations.data !== undefined && locations.data.length === 0;
+  const summary = useResource(() => (locationId ? api.admin.getAttendanceSummary(locationId) : idle<AttendanceSummary>()), [api, locationId]);
+  const records = useResource(() => (locationId ? api.admin.getAttendanceRecords(locationId) : idle<AttendanceRecord[]>()), [api, locationId]);
+  const anomalies = useResource(() => (locationId ? api.admin.getAnomalies(locationId) : idle<Anomaly[]>()), [api, locationId]);
 
   // Pembaruan berkala agar "diperbarui HH.mm" tetap jujur tanpa perlu muat ulang halaman.
   const { reload: reloadSummary } = summary;
@@ -50,7 +58,7 @@ export const useAttendanceToday = () => {
   }, [reloadSummary, reloadRecords, locationId]);
 
   const changeLocation = (next: string) => {
-    setLocationId(next);
+    setSelectedLocationId(next);
     setFilter('all');
     setQuery('');
   };
@@ -101,6 +109,7 @@ export const useAttendanceToday = () => {
 
   return {
     locationId,
+    noLocations,
     locationName,
     changeLocation,
     locations,

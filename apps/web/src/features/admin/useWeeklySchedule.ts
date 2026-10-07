@@ -1,15 +1,23 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { useApi, useResource, type ScheduleCell } from '@dagingpeople/api';
+import { useApi, useResource, type AdminWeekSchedule, type ScheduleCell } from '@dagingpeople/api';
 import { errorMessage, useTransientMessage } from '../shared/hooks';
 
 export type ScheduleNotice = { tone: 'success' | 'danger'; text: string };
 
+/** Belum ada lokasi terpilih: biarkan resource tetap "memuat" alih-alih memanggil API dengan id kosong. */
+const idle = <T,>() => new Promise<T>(() => undefined);
+
 /** Data + mutasi layar Jadwal Shift. Setiap mutasi mengembalikan jadwal terbaru dari server. */
-export const useWeeklySchedule = (locationId = 'kemang') => {
+export const useWeeklySchedule = () => {
   const api = useApi();
-  const schedule = useResource(() => api.admin.getWeekSchedule(locationId), [api, locationId]);
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+  const locations = useResource(() => api.admin.listLocations(), [api]);
+  // Default = lokasi pertama yang boleh dilihat akun ini (Kepala Toko hanya punya lokasinya sendiri).
+  const locationId = selectedLocationId ?? locations.data?.[0]?.id ?? null;
+  const noLocations = locations.data !== undefined && locations.data.length === 0;
+  const schedule = useResource(() => (locationId ? api.admin.getWeekSchedule(locationId) : idle<AdminWeekSchedule>()), [api, locationId]);
   const [pendingCell, setPendingCell] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [notice, setNotice] = useTransientMessage<ScheduleNotice>(8000);
@@ -18,7 +26,7 @@ export const useWeeklySchedule = (locationId = 'kemang') => {
 
   const updateCell = useCallback(
     async (employeeId: string, dayIndex: number, cell: ScheduleCell) => {
-      if (!weekStart) return;
+      if (!weekStart || !locationId) return;
       const key = `${employeeId}:${dayIndex}`;
       setPendingCell(key);
       try {
@@ -33,7 +41,7 @@ export const useWeeklySchedule = (locationId = 'kemang') => {
   );
 
   const publish = useCallback(async (): Promise<boolean> => {
-    if (!weekStart) return false;
+    if (!weekStart || !locationId) return false;
     setPublishing(true);
     try {
       setData(await api.admin.publishSchedule(locationId, weekStart));
@@ -47,5 +55,5 @@ export const useWeeklySchedule = (locationId = 'kemang') => {
     }
   }, [api, locationId, weekStart, setData, setNotice]);
 
-  return { schedule, updateCell, pendingCell, publish, publishing, notice };
+  return { locations, locationId, changeLocation: setSelectedLocationId, noLocations, schedule, updateCell, pendingCell, publish, publishing, notice };
 };

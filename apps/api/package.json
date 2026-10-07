@@ -10,6 +10,7 @@
     "migrate": "tsx --env-file-if-exists=.env src/db/migrate.ts",
     "seed": "tsx --env-file-if-exists=.env src/seed/cli.ts",
     "admin": "tsx --env-file-if-exists=.env src/admin/cli.ts",
+    "seed:payroll": "tsx --env-file-if-exists=.env src/seed/demo-payroll.ts",
     "test:sql": "psql -v ON_ERROR_STOP=1 -f db/tests/schema.test.sql",
     "test": "tsx test/support/prepare-template.ts && tsx --test --test-concurrency=1 test/*.test.ts",
     "typecheck": "tsc --noEmit",

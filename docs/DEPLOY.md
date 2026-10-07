@@ -163,3 +163,22 @@ Plugin native `SecureStorage` dan `DeviceIntegrity` masih harus dibuat tim nativ
 - [ ] Format file Mandiri MCM sudah dicocokkan dengan spesifikasi resmi dari RM Bank Mandiri (`apps/api/src/modules/payroll/bank-export.ts`)
 - [ ] Hasil payroll satu periode dibandingkan dengan hitungan manual sebelum dipakai membayar
 - [ ] Temuan terbuka di `docs/SECURITY-REVIEW.md` sudah diputuskan (diperbaiki atau diterima)
+
+---
+
+## Lampiran: instance demo untuk calon pembeli
+
+Instance demo memakai database terpisah yang diisi data contoh. **Jangan pernah memasukkan data karyawan asli ke instance demo**:
+akun demo (`*@dagingprima.co.id` / `Demo#2026`) tercantum di repo, jadi siapa pun bisa masuk.
+
+1. Database baru → jalankan migrasi, lalu dari mesin lokal dengan `DATABASE_URL` mengarah ke database demo dan kunci yang sama dengan API demo:
+   ```bash
+   NODE_ENV=development npm run seed -w @dagingpeople/api-server
+   NODE_ENV=development npm run seed:payroll -w @dagingpeople/api-server
+   ```
+   `seed:payroll` menyiapkan payroll September 2026 (absensi, lembur, Budi mangkir sehari) sampai tahap Review HR;
+   THP Joko Rp5.805.910 sama dengan hitungan manual. Halaman Payroll menampilkan periode belum selesai yang paling lama.
+2. Di Vercel tambahkan `NEXT_PUBLIC_DEMO_KIOSK_TOKENS` =
+   `{"kiosk-kemang-1":"dev-token-kiosk-kemang-1","kiosk-gudang-1":"dev-token-kiosk-gudang-1"}` agar halaman kiosk
+   tersambung ke API. Variabel ini terkirim ke peramban: **hanya untuk token demo**, jangan untuk token kiosk produksi.
+3. Untuk mengembalikan demo ke kondisi awal: kosongkan database demo (buat ulang), lalu ulangi langkah 1.

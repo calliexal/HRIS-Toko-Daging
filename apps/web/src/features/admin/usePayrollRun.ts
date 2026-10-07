@@ -55,9 +55,31 @@ const loadRun = async (api: HrisClient, period: string): Promise<PayrollRun> => 
   }
 };
 
-export const usePayrollRun = (period = currentPayrollPeriod()) => {
+const previousPeriod = (period: string): string => {
+  const [y, m] = period.split('-').map(Number) as [number, number];
+  return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`;
+};
+
+/**
+ * Periode yang belum selesai paling lama didahulukan: bila periode lalu belum dikunci (mis. masih menunggu
+ * persetujuan Owner), HR harus menyelesaikannya dulu sebelum mengurus periode berjalan.
+ */
+const loadDefaultRun = async (api: HrisClient): Promise<PayrollRun> => {
+  const current = currentPayrollPeriod();
+  try {
+    const previous = await api.admin.getPayrollRun(previousPeriod(current));
+    if (stepStatus(previous, 'lock_period') !== 'done') return previous;
+  } catch (e) {
+    if (!(e instanceof ApiError && e.code === 'PERIOD_NOT_FOUND')) throw e;
+  }
+  return loadRun(api, current);
+};
+
+export const usePayrollRun = (requestedPeriod?: string) => {
   const api = useApi();
-  const run = useResource(() => loadRun(api, period), [api, period]);
+  const run = useResource(() => (requestedPeriod ? loadRun(api, requestedPeriod) : loadDefaultRun(api)), [api, requestedPeriod]);
+  // Semua aksi memakai periode yang sedang tampil, bukan tebakan dari tanggal hari ini.
+  const period = run.data?.period ?? requestedPeriod ?? currentPayrollPeriod();
   const [filter, setFilter] = useState<PayrollFilter>('needs_review');
   const [busy, setBusy] = useState<'recalculate' | 'submit' | 'lock' | null>(null);
   const [notice, setNotice] = useTransientMessage<PayrollNotice>(8000);

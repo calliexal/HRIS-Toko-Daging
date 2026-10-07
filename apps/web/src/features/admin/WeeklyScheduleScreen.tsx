@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { dayParts, formatClock, formatDateShort, formatRange, type AdminWeekSchedule, type CoverageCount, type ScheduleRow } from '@dagingpeople/api';
-import { Banner, Button, Card, Icon, Skeleton, StatusChip } from '@dagingpeople/ui';
+import { Banner, Button, Card, EmptyState, Icon, SelectField, Skeleton, StatusChip } from '@dagingpeople/ui';
 import { ConfirmDialog } from '../shared/ConfirmDialog';
 import { useDelayedFlag } from '../shared/hooks';
 import { PageHeader } from './PageHeader';
@@ -121,7 +121,7 @@ const ScheduleGrid = ({ data, pendingCell, onChange }: { data: AdminWeekSchedule
 };
 
 export const WeeklyScheduleScreen = () => {
-  const { schedule, updateCell, pendingCell, publish, publishing, notice } = useWeeklySchedule();
+  const { locations, locationId, changeLocation, noLocations, schedule, updateCell, pendingCell, publish, publishing, notice } = useWeeklySchedule();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const slow = useDelayedFlag(schedule.loading && !schedule.data);
   const data = schedule.data;
@@ -139,6 +139,20 @@ export const WeeklyScheduleScreen = () => {
   };
 
   const range = data ? formatRange(data.days[0] ?? data.weekStart, data.days[data.days.length - 1] ?? data.weekStart) : '';
+  const locationOptions = (locations.data ?? []).map((l) => ({ value: l.id, label: l.name }));
+
+  if (noLocations) {
+    return (
+      <div className="adm-page">
+        <PageHeader title="Jadwal Shift" />
+        <Card>
+          <EmptyState icon="calendar" title="Belum ada lokasi kerja">
+            Jadwal shift bisa disusun setelah outlet, gudang, atau kantor didaftarkan beserta template shift-nya.
+          </EmptyState>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="adm-page">
@@ -158,6 +172,16 @@ export const WeeklyScheduleScreen = () => {
         }
         actions={
           <>
+            {locationOptions.length > 1 ? (
+              <SelectField
+                label="Lokasi"
+                hideLabel
+                className="adm-location-select"
+                value={locationId ?? ''}
+                onChange={(e) => changeLocation(e.target.value)}
+                options={locationOptions}
+              />
+            ) : null}
             <span className="adm-week-label dp-num">
               <Icon name="calendar" size={18} />
               {range || '—'}
