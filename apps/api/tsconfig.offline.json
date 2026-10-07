@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "//": "Typecheck tanpa @nestjs/pg/pg-boss (sandbox tanpa akses npm). Lapisan itu diperiksa oleh tsconfig.json setelah npm install.",
+  "exclude": ["src/nest", "src/jobs", "src/db", "src/main.ts", "src/common/pg-db.ts", "src/seed/cli.ts"]
+}

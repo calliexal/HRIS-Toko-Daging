@@ -1,0 +1,17 @@
+/* Halaman indeks demo statis saja (tidak dipakai aplikasi Next). */
+.demo-index { max-width: 880px; margin: 0 auto; padding: var(--space-8) var(--space-4); display: flex; flex-direction: column; gap: var(--space-8); }
+.demo-index__header { display: flex; flex-direction: column; gap: var(--space-2); }
+.demo-index__brand { font-size: 16px; font-weight: 700; color: var(--brand); }
+.demo-index__lead { color: var(--ink-muted); max-width: 64ch; }
+.demo-index__group { display: flex; flex-direction: column; gap: var(--space-2); }
+.demo-index__note { font-size: 13px; color: var(--ink-muted); }
+.demo-index__list { list-style: none; margin: var(--space-2) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.demo-index__link {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: var(--space-3) var(--space-4); min-height: var(--tap-target);
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
+  color: var(--ink); text-decoration: none;
+}
+.demo-index__link:hover { border-color: var(--brand); color: var(--ink); }
+.demo-index__title { font-weight: 700; color: var(--brand); }
+.demo-index__desc { font-size: 14px; line-height: 20px; color: var(--ink-muted); }

@@ -1,0 +1,107 @@
+/* DIBANGKITKAN OTOMATIS dari tokens.json. Jangan edit manual: jalankan `npm run tokens`. */
+:root {
+  --bg: #F6F4F0;
+  --surface: #FFFFFF;
+  --surface-sunken: #ECE8E1;
+  --border: #DCD6CC;
+  --border-strong: #8F877C;
+  --ink: #1F1B17;
+  --ink-muted: #57504A;
+  --brand: #0E5A63;
+  --brand-hover: #0A4850;
+  --brand-tint: #E3F0F1;
+  --on-brand: #FFFFFF;
+  --accent: #A8461F;
+  --accent-tint: #F8E9E1;
+  --success: #1E6B41;
+  --success-tint: #E3F2E8;
+  --warning: #8A5300;
+  --warning-tint: #FBF0DC;
+  --danger: #B42318;
+  --danger-tint: #FCE8E6;
+  --info: #2556A0;
+  --info-tint: #E5EDF9;
+  --focus-ring: #0E5A63;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --tap-target: 48px;
+  --tap-target-kiosk: 64px;
+  --control-height-dense: 36px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --shadow-overlay: 0 8px 24px rgba(31, 27, 23, 0.16);
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #151311;
+    --surface: #1E1B18;
+    --surface-sunken: #0F0E0C;
+    --border: #36312C;
+    --border-strong: #7A7268;
+    --ink: #F2EEE8;
+    --ink-muted: #B5ADA3;
+    --brand: #5FB8C2;
+    --brand-hover: #7CC7D0;
+    --brand-tint: #16353A;
+    --on-brand: #0B1F22;
+    --accent: #E58A62;
+    --accent-tint: #3A2219;
+    --success: #6CC28F;
+    --success-tint: #173323;
+    --warning: #E7AE4F;
+    --warning-tint: #3A2A10;
+    --danger: #F2847A;
+    --danger-tint: #3D1A17;
+    --info: #8DB2EE;
+    --info-tint: #18263D;
+    --focus-ring: #5FB8C2;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #151311;
+  --surface: #1E1B18;
+  --surface-sunken: #0F0E0C;
+  --border: #36312C;
+  --border-strong: #7A7268;
+  --ink: #F2EEE8;
+  --ink-muted: #B5ADA3;
+  --brand: #5FB8C2;
+  --brand-hover: #7CC7D0;
+  --brand-tint: #16353A;
+  --on-brand: #0B1F22;
+  --accent: #E58A62;
+  --accent-tint: #3A2219;
+  --success: #6CC28F;
+  --success-tint: #173323;
+  --warning: #E7AE4F;
+  --warning-tint: #3A2A10;
+  --danger: #F2847A;
+  --danger-tint: #3D1A17;
+  --info: #8DB2EE;
+  --info-tint: #18263D;
+  --focus-ring: #5FB8C2;
+  color-scheme: dark;
+}
+
+.t-clock { font-size: 40px; line-height: 44px; font-weight: 700; }
+.t-amount-lg { font-size: 28px; line-height: 34px; font-weight: 700; }
+.t-h1 { font-size: 24px; line-height: 30px; font-weight: 700; }
+.t-h2 { font-size: 20px; line-height: 26px; font-weight: 600; }
+.t-h3 { font-size: 16px; line-height: 22px; font-weight: 600; }
+.t-body { font-size: 15px; line-height: 22px; font-weight: 400; }
+.t-body-strong { font-size: 15px; line-height: 22px; font-weight: 600; }
+.t-small { font-size: 13px; line-height: 18px; font-weight: 400; }
+.t-label { font-size: 13px; line-height: 18px; font-weight: 600; }
+.t-caption { font-size: 12px; line-height: 16px; font-weight: 500; }
+.t-clock, .t-amount-lg { font-variant-numeric: tabular-nums; }

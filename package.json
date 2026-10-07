@@ -1,0 +1,28 @@
+{
+  "name": "dagingpeople",
+  "private": true,
+  "version": "0.1.0",
+  "description": "HRIS DagingPeople: API (NestJS + Postgres), Payroll Engine, aplikasi karyawan (Capacitor), web admin & kiosk (Next.js).",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "tokens": "node packages/tokens/scripts/build-css.mjs",
+    "dev:web": "npm run dev -w @dagingpeople/web",
+    "dev:employee": "npm run dev -w @dagingpeople/employee",
+    "build": "npm run tokens && npm run build -w @dagingpeople/web && npm run build -w @dagingpeople/employee",
+    "typecheck": "tsc -p apps/web --noEmit && tsc -p apps/employee --noEmit",
+    "demo": "node tools/build-demo.mjs",
+    "dev:api": "npm run dev -w @dagingpeople/api-server",
+    "test:api": "npm test -w @dagingpeople/api-server",
+    "test:engine": "npm test -w @dagingpeople/payroll-engine"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

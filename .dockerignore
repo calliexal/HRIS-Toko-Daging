@@ -1,0 +1,13 @@
+**/node_modules
+**/.next
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+demo-dist
+.demo-modules
+.git
+.claude
+apps/employee/android
+apps/employee/ios
+*.tsbuildinfo

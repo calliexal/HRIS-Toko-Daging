@@ -1,0 +1,11 @@
+node_modules/
+.demo-modules/
+demo-dist/
+.next/
+dist/
+apps/employee/android/
+apps/employee/ios/
+*.tsbuildinfo
+.DS_Store
+.env
+.env.local

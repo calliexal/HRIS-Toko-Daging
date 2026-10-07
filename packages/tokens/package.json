@@ -1,0 +1,10 @@
+{
+  "name": "@dagingpeople/tokens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Design token DagingPeople. tokens.json disalin dari Design System; tokens.css dibangkitkan oleh scripts/build-css.mjs.",
+  "exports": {
+    "./tokens.css": "./src/tokens.css",
+    "./tokens.json": "./tokens.json"
+  }
+}
