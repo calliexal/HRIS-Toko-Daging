@@ -1,97 +1,113 @@
 # DagingPeople
 
-HRIS Rilis 1 PT Daging Prima Nusantara: aplikasi karyawan (Android & iOS), web admin, kiosk absensi, dan API.
-Layar frontend berjalan di atas kontrak `HrisClient`. Klien yang tersedia ada dua: `createMockClient()` dengan data
-contoh untuk demo, dan `createHttpClient()` yang terhubung ke API sungguhan. Komponen layar tidak perlu diubah
-saat berpindah dari satu klien ke klien lainnya. Detail backend ada di [`apps/api/README.md`](apps/api/README.md).
+Sistem HR untuk jaringan toko daging dengan outlet dan gudang cold storage. Isinya absensi yang sulit dititipkan,
+jadwal shift, cuti, persetujuan berjenjang, dan payroll yang menghitung PPh 21, BPJS, dan lembur sesuai aturan
+Indonesia. Satu monorepo berisi web admin, kiosk absensi, aplikasi karyawan, dan API.
 
-Sumber: PRD v1.1, wireframe DagingPeople (14 layar), Design System DagingPeople.
+**Demo:** [dagingpeople-hris.vercel.app](https://dagingpeople-hris.vercel.app) · masuk dengan `hr@dagingprima.co.id`
+dan sandi `Demo#2026`. Semua data di demo fiktif dan bisa diubah siapa saja.
 
-## Isi
+![Payroll September 2026](docs/screenshots/04-payroll.png)
 
-| Folder | Isi | Stack |
-| --- | --- | --- |
-| `apps/employee` | Aplikasi karyawan M1–M7 + Profil: beranda & absen, selfie + GPS, absen gudang via QR, hasil absen, jadwal, cuti, slip gaji | React 19 + Vite + Capacitor 7 |
-| `apps/api` | Backend: NestJS modular monolith, PostgreSQL 16, pg-boss. Absensi, kiosk, jadwal, cuti, persetujuan, payroll, ekspor Mandiri, data karyawan | NestJS + Postgres |
-| `packages/payroll-engine` | Perhitungan gaji sebagai pure function: PPh 21 TER/Pasal 17, BPJS, lembur PP 35/2021, proporsional, RuleSet berversi | TypeScript |
-| `apps/web` | Web admin W1–W4 (`/kehadiran`, `/jadwal`, `/persetujuan`, `/payroll`) dan kiosk K1–K3 (`/kiosk/outlet`, `/kiosk/outlet/pin`, `/kiosk/gudang`) | Next.js 15 App Router |
-| `packages/tokens` | Token warna/spasi/radius dari Design System → `src/tokens.css` (tema terang & gelap) | — |
-| `packages/ui` | Komponen dasar: Button, StatusChip, field berlabel, Card, StatTile, Banner, EmptyState, Icon, AppLink | React |
-| `packages/api` | Tipe domain, kontrak `HrisClient`, klien mock & HTTP, daftar endpoint `ROUTES`, format rupiah/jam/tanggal, `useResource` | TypeScript |
-| `tools` | `build-demo.mjs` (demo statis semua layar), `smoke-demo.mjs` (screenshot + cek error konsol) | esbuild, Playwright |
-| `docs/CONVENTIONS.md` | Aturan tim: token, status, ukuran sentuh, bahasa, aksesibilitas | — |
-| `docs/DEPLOY.md` | Deploy produksi: Vercel (web), Docker (API), Postgres, akun HR pertama, checklist go-live | — |
-| `docs/SECURITY-REVIEW.md` | Hasil review keamanan: temuan yang sudah diperbaiki dan yang masih terbuka | — |
+## Kenapa dibuat
 
-## Mulai
+Toko daging punya masalah HR yang tidak tertangani spreadsheet. Karyawan tersebar di outlet dan gudang dengan shift
+mulai jam 3 pagi. Titip absen gampang dilakukan. Gaji karyawan harian, kontrak, dan tetap dihitung dengan aturan
+berbeda, lalu PPh 21 skema TER yang berlaku sejak 2024 menambah satu lapisan lagi. Kesalahan kecil di payroll
+langsung jadi masalah kepercayaan.
+
+## Yang bisa dilakukan
+
+| Peran | Fitur |
+| --- | --- |
+| Karyawan | Absen lewat HP dengan GPS dan selfie, absen gudang dengan memindai QR kiosk, lihat jadwal, ajukan cuti, buka slip gaji |
+| Kepala Toko | Pantau kehadiran outlet hari ini, susun dan terbitkan jadwal shift, setujui cuti dan tugas luar |
+| HR | Semua lokasi, koreksi absen, hitung payroll, ajukan ke Owner |
+| Owner & Finance | Setujui payroll, ekspor file transfer Mandiri |
+| Tablet kiosk | Absen dengan kartu ID, PIN, atau QR dinamis untuk karyawan tanpa HP |
+
+<table>
+  <tr>
+    <td><img src="docs/screenshots/01-kehadiran.png" alt="Kehadiran hari ini" /></td>
+    <td><img src="docs/screenshots/02-jadwal.png" alt="Jadwal shift mingguan" /></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/05-kiosk-gudang.png" alt="Kiosk gudang dengan QR dinamis" /></td>
+    <td><img src="docs/screenshots/06-kiosk-pin.png" alt="Kiosk absen dengan PIN" /></td>
+  </tr>
+</table>
+
+<img src="docs/screenshots/07-app-beranda.png" alt="Aplikasi karyawan" width="280" />
+
+## Bagian yang paling menarik secara teknis
+
+**Payroll engine sebagai pure function.** `packages/payroll-engine` tidak menyentuh database. Input masuk, hasil
+keluar, dan hash input/output disimpan supaya perhitungan bisa diulang dan dibuktikan sama. Aturan pajak dan BPJS ada
+di RuleSet berversi, jadi perubahan tarif tahun depan tidak menulis ulang riwayat. Ada dua jenis uji. Golden case
+mencocokkan hasil dengan hitungan manual, misalnya gaji bersih Joko di demo Rp5.805.910. Uji properti menjalankan
+500 input acak dan memeriksa aturan yang harus selalu benar, seperti bruto pajak sama dengan bruto tunai ditambah
+iuran pemberi kerja.
+
+**Absensi yang sulit dicurangi.** Absen di luar radius lokasi ditolak, kecuali karyawan mengisi alasan tugas luar
+untuk disetujui Kepala Toko. Lokasi palsu ditolak tetapi tetap tercatat untuk audit. QR kiosk gudang berganti setiap
+30 detik dan ditandatangani HMAC dengan gaya TOTP, jadi kiosk tetap bisa menampilkan QR saat offline. Absen offline
+lebih dari 12 jam masuk antrean review. Setiap absen membawa `clientUuid` sehingga kiriman ulang dari HP tidak
+pernah tercatat dua kali.
+
+**Hak akses dicek di lapisan service, bukan di controller.** Endpoint tanpa deklarasi akses otomatis ditolak.
+Peran dibaca ulang dari database setiap request, jadi akun yang dinonaktifkan langsung kehilangan akses walaupun
+tokennya masih berlaku. Kepala Toko hanya melihat lokasinya, data gaji hanya untuk HR, Finance, dan Owner, dan
+tidak ada yang bisa menyetujui pengajuannya sendiri.
+
+**Data sensitif.** NIK dan nomor rekening dienkripsi AES-256-GCM. Keunikan NIK dicek lewat blind index HMAC, tanpa
+menyimpan NIK polos. Audit log memakai rantai hash, dan trigger database membekukan payroll yang sudah disetujui
+sehingga angkanya tidak bisa diubah diam-diam.
+
+**Bug race condition di batas percobaan login.** Review keamanan menemukan bahwa batas 5x salah sandi bisa
+dilewati. Kodenya membaca hitungan kegagalan, memeriksa sandi, lalu menulis hitungan baru. Dua puluh request paralel
+semuanya membaca hitungan lama, dan akun tidak pernah terkunci. Perbaikannya memesan jatah percobaan dengan satu
+`UPDATE ... RETURNING` atomik sebelum sandi diperiksa. Setelah itu, dari 20 request paralel hanya 5 yang diperiksa.
+PIN kiosk punya pola yang sama dan diperbaiki dengan cara yang sama. Keduanya kini punya uji regresi. Catatan
+lengkap review ada di [`docs/SECURITY-REVIEW.md`](docs/SECURITY-REVIEW.md).
+
+**Satu kontrak untuk mock dan API.** Semua layar memanggil `HrisClient`. Implementasi mock dipakai untuk demo dan
+desain, implementasi HTTP untuk produksi, dan tidak ada komponen layar yang tahu bedanya. Daftar endpoint ditulis
+sekali di `packages/api/src/routes.ts`, lalu dibaca oleh klien frontend dan controller NestJS. Satu uji memastikan
+keduanya tidak pernah berbeda.
+
+## Stack
+
+| Bagian | Teknologi |
+| --- | --- |
+| Web admin & kiosk | Next.js 15 App Router, React 19, CSP dengan nonce per request |
+| Aplikasi karyawan | React 19, Vite, Capacitor 7 untuk Android dan iOS |
+| API | NestJS modular monolith, PostgreSQL, pg-boss untuk job terjadwal tanpa Redis, Zod untuk validasi |
+| Payroll | TypeScript murni, diuji dengan `node:test` |
+| Deploy | Vercel di Singapura untuk web, Railway di Singapura untuk API dan Postgres, image Docker yang menjalankan migrasi saat start |
+
+## Uji
+
+```bash
+npm run test:engine   # 35 uji payroll engine
+npm run test:api      # 62 uji service & e2e terhadap Postgres sungguhan, satu database per file uji
+```
+
+Uji API tidak memakai mock database. Setiap file uji mendapat salinan database yang sudah dimigrasi dan diisi data,
+dengan "hari ini" dikunci ke Rabu, 7 Oktober 2026 pukul 05.52 WIB.
+
+## Menjalankan di lokal
 
 ```bash
 npm install
-npm run tokens            # bangkitkan tokens.css dari tokens.json
-npm run dev:web           # http://localhost:3000 → web admin & kiosk
-npm run dev:employee      # http://localhost:5173 → aplikasi karyawan di browser
-npm run typecheck
+npm run dev:web        # http://localhost:3000, memakai data contoh
 ```
 
-Aplikasi native:
+Langkah lengkap dengan API dan Postgres ada di [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md). Deploy produksi ada di
+[`docs/DEPLOY.md`](docs/DEPLOY.md).
 
-```bash
-cd apps/employee
-npx cap add android && npx cap add ios   # sekali saja
-npm run cap:sync
-npx cap open android                     # atau: npx cap open ios
-```
+## Yang belum selesai
 
-Demo statis (sama dengan preview yang dibagikan):
-
-```bash
-npm run demo              # → demo-dist/index.html
-npx serve demo-dist
-```
-
-## Deploy
-
-Ikuti [`docs/DEPLOY.md`](docs/DEPLOY.md). Ringkasnya: web di Vercel, API sebagai container (`apps/api/Dockerfile`) di
-Railway/Render/Fly, Postgres terkelola di region Jakarta. Akun produksi dibuat dengan CLI admin
-(`npm run admin -w @dagingpeople/api-server`), bukan seed. Baca juga [`docs/SECURITY-REVIEW.md`](docs/SECURITY-REVIEW.md).
-
-## Login
-
-| Aplikasi | Layar | Akses | Token disimpan di |
-| --- | --- | --- | --- |
-| Web admin | `/masuk` (demo: `web.html#/masuk`) | Kepala Toko, HR, Finance, Owner. Akun karyawan diarahkan ke aplikasi HP | `sessionStorage` (hilang saat tab ditutup) |
-| Aplikasi karyawan | Layar pertama sebelum Beranda | Akun yang terhubung ke data karyawan (termasuk Kepala Toko) | Keychain/Keystore lewat plugin `SecureStorage`; browser: `sessionStorage` |
-
-Isi `NEXT_PUBLIC_API_URL` (web) atau `VITE_API_URL` (aplikasi) untuk memakai API sungguhan; kosong = data contoh.
-Akun contoh: `hr@`, `owner@`, `finance@`, `hendra@` (Kepala Toko), `joko@dagingprima.co.id`, sandi `Demo#2026`.
-Absen offline terikat ke karyawan pemiliknya: bila HP dipakai bergantian, absen A tidak pernah terkirim dengan sesi B.
-
-## Mencoba kondisi lapangan
-
-Di aplikasi karyawan, buka **Profil → Simulasi kondisi lapangan** lalu nyalakan "Di luar radius", "Lokasi palsu",
-atau "Mode offline". Kiosk PIN contoh: nomor `0042`, PIN `123456` (3x salah mengunci akun 15 menit).
-
-## Status verifikasi
-
-Sudah diuji di sandbox:
-- Seluruh 16 rute dibundel dengan esbuild dan dirender di Chromium tanpa error konsol (`tools/smoke-demo.mjs`),
-  di 390px, 1024×768 (kiosk), dan 1440px.
-- Alur utama lewat Playwright: absen masuk, di luar radius → tugas luar, lokasi palsu ditolak, antrean offline,
-  QR gudang kedaluwarsa/valid, cuti dengan validasi, filter kehadiran, ubah & publikasi jadwal, tolak/setujui pengajuan,
-  kirim payroll untuk persetujuan, PIN salah 3x lalu terkunci.
-
-Belum bisa diuji (npm registry diblokir di sandbox, jadi dependensi framework tidak terpasang):
-- `next build`, `vite build`, `cap sync`, dan `npm run typecheck` dengan `@types/react` asli. Jalankan ini lebih dulu.
-- Plugin Capacitor di perangkat nyata (kamera, GPS, pemindai barcode) dan paket `qrcode` asli di kiosk gudang
-  (demo memakai pola pengganti).
-
-## Pekerjaan lanjutan
-
-| Area | Yang dibutuhkan | Pemilik |
-| --- | --- | --- |
-| Deteksi lokasi palsu & jam monotonik | Plugin native `DeviceIntegrity` (Android `Location.isMock()`, iOS `isSimulatedBySoftware`, `elapsedRealtime`). Interface sudah ada di `apps/employee/src/device/capacitor.ts` | Tim native |
-| Penyimpanan token native | Plugin Capacitor `SecureStorage` (iOS Keychain, Android Keystore) sesuai antarmuka di `apps/employee/src/device/secureStorage.ts`. Selama belum ada, token hanya di memori (aman, tetapi login ulang tiap aplikasi dibuka) | Tim native |
-| Token perangkat kiosk | Layar setup kiosk (HR memasukkan token perangkat sekali, disimpan di tablet) lalu `createHttpClient({ kioskToken, kioskId })` | FE + HR |
-| Endpoint yang belum ada | Unggah lampiran cuti dan foto selfie (presigned URL ke object storage), laporan slip ke HR | Backend + FE |
-| R1.1 | Tukar shift, jadwal drag-and-drop, notifikasi WhatsApp, navigasi minggu & "Salin minggu lalu" | FE |
-| Pemindai QR di web iOS | `BarcodeDetector` tidak ada di Safari; aplikasi native memakai ML Kit, kiosk sebaiknya memakai tablet Android/Chrome | FE |
+Plugin native untuk deteksi lokasi palsu di level perangkat dan penyimpanan token di Keychain/Keystore belum dibuat.
+Alur payroll di web baru sampai tahap "Kirim untuk Persetujuan". 2FA untuk akun HR, Finance, dan Owner juga belum
+ada, padahal akun itu bisa melihat gaji seluruh karyawan. Daftar lengkapnya ada di
+[`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md#pekerjaan-lanjutan).
